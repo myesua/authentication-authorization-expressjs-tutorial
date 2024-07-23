@@ -116,12 +116,11 @@ In this section, you will create a route for the main app and other mini app. He
 
 To create a main route:
 
-- Create a folder named "routes" in your v1 folder
-- Create a file inside your routes’ folder, name it "index.js" (without the quotes)
-- Import the express module
-- Create an app object of the express app instance
-- Call the get method on the app object, write the function handler.
-- Export the app object as default
+- Create a folder named "routes" in your v1 folder.
+- Create a file inside your routes’ folder, name it "index.js" (without the quotes).
+- Create the main route function. It will take the server instance as its argument.
+- Next, write the home route logic.
+- Export the route function as default.
 
 > Check the github repository for the starter files to confirm that you have same number of folders. Note: You may ignore the utils folder for now.
 
@@ -130,33 +129,30 @@ Your code should look like the following:
 **File Path** - v1/routes/index.js
 
 ```javascript
-import express from "express"; // import the express module
-
-const app = express(); // Create an app object
-
-app.disable("x-powered-by"); // Reduce fingerprinting (optional)
-app.get("/v1", (req, res) => {
+const Router = (server) => {
 	// home route with the get method and a handler
-	try {
-		res.status(200).json({
-			status: "success",
-			data: [],
-			message: "Welcome to our API homepage!",
-		});
-	} catch (err) {
-		res.status(500).json({
-			status: "error",
-			message: "Internal Server Error",
-		});
-	}
-});
-export default app;
+	server.get("/v1", (req, res) => {
+		try {
+			res.status(200).json({
+				status: "success",
+				data: [],
+				message: "Welcome to our API homepage!",
+			});
+		} catch (err) {
+			res.status(500).json({
+				status: "error",
+				message: "Internal Server Error",
+			});
+		}
+	});
+};
+export default Router;
 ```
 
-> Note that, in the preceding code, we have used `express()` to create the main app object for the main route. For other mini-routes we will use `express.Router()` instead. You shall see that soon.
+> Note that, in the preceding code, we have created an handler that will handle various routing logic in the app. It takes the server instance as an argument. You shall see where we are getting that instance from in a bit.
 
 **Create an env and configuration file**
-Another important file to create is the env file. The env file stores a key-value string for your secret strings which you would not to be exposed. You may store API keys, secrets, tokens in it.
+Another important file to create is the env file. The env file stores a key-value string for your secret strings which you would want not to be exposed. You may store API keys, secrets, tokens in it or use more secured solutions.
 
 Run the command `npm run env` to create an env file with the .env.example file template in the starter files.
 
@@ -176,7 +172,7 @@ SECRET_ACCESS_TOKEN=xxxxx
 
 You will change the values later.
 
-You may also create a configuration file or config file for short. It is used to organize environment variables into one place for convenient usage.
+You may also create a configuration file or config file for short. It is used to organize environment variables into one place for convenience.
 
 To do that,
 
@@ -223,7 +219,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import mongoose from "mongoose";
 import { PORT, URI } from "./config/index.js";
-import App from "./routes/index.js";
+import Router from "./routes/index.js";
 
 // === 1 - CREATE SERVER ===
 const server = express();
@@ -249,8 +245,8 @@ mongoose
 	.catch((err) => console.log(err));
 
 // === 4 - CONFIGURE ROUTES ===
-// Connect Main route to server
-server.use(App);
+// Connect Route handler to server
+Router(server);
 
 // === 5 - START UP SERVER ===
 server.listen(PORT, () =>
@@ -576,7 +572,7 @@ export async function Login(req, res) {
 			});
 		// if user exists
 		// validate password
-		const isPasswordValid = bcrypt.compare(
+		const isPasswordValid = await bcrypt.compare(
 			`${req.body.password}`,
 			user.password
 		);
@@ -732,7 +728,7 @@ export async function Login(req, res) {
 			});
 		// if user exists
 		// validate password
-		const isPasswordValid = bcrypt.compare(
+		const isPasswordValid = await bcrypt.compare(
 			`${req.body.password}`,
 			user.password
 		);
